@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collection
+  labels:
+    app: noise-capture-pod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: noise-capture-pod
+  template:
+    metadata:
+      labels:
+        app: noise-capture-pod
+    spec:
+      containers:
+      - name: noise-capture-service
+        image: noise-capture-service:0.1
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: spring.data.redis.host
+            value: localhost
+        ports:
+        - containerPort: 8080
+      - name: redis-server
+        image: redis
+        ports:
+        - containerPort: 6379
+      - name: periodic-sample-submit
+        image: periodic-sample-submit:0.1
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: noise.collector.url
+            value: http://localhost:8080/flush
+        ports:
+        - containerPort: 8081
+      volumes:
+        - name: config-volume-capture
+          configMap:
+            name: collection-capture-config
